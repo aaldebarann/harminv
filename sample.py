@@ -24,9 +24,12 @@ def save(signal, path):
     print('Data saved to {0}'.format(path))
 
 def exp(A, freq, phase, decay, time):
+    print('{0}, {1}, {2}, {3}'.format(freq, decay, A, phase))
     return A * np.exp( -1j * (2 * np.pi * freq * time - phase) - decay * time)
 
 def cos(A, freq, phase, decay, time):
+    print('{0}, {1}, {2}, {3}'.format(freq, decay, A/2, phase))
+    print('{0}, {1}, {2}, {3}'.format(-freq, decay, A/2, phase))
     return A * np.exp(-decay * time) * np.cos(2 * np.pi * freq * time - phase)
 
 def sample_1(output_path):
@@ -50,17 +53,18 @@ def inversion(signal, dir):
 
 def get_inversed(time, dir):
     subprocess.run(['./harminv__.sh', dir])
-    df = pd.read_csv(os.path.join(dir, 'inversed.csv'), sep=',\s+')
+    df = pd.read_csv(os.path.join(dir, 'inversed.csv'), engine='python', sep=', ')
     
     signal = np.zeros(len(time), dtype='complex128')
+    print('Inversed signal')
+    print('frequency, decay, amplitude, phase')
     for index, row in df.iterrows():
-        #print(row['frequency'])
         signal += exp(A=row['amplitude'], freq=row['frequency'], phase=row['phase'], decay=row['decay constant'], time=time)
     signal = signal.astype('float64')
     return signal
 
 def plot(time, signal, inversed, output_dir, sigma):
-    plt.title('Исходный и восстановленный сигнал при зашумлении с $\sigma$={0}'.format(sigma))
+    plt.title(r'Исходный и восстановленный сигнал при зашумлении с $\sigma$={0}'.format(sigma))
     plt.plot(time, signal, 'b', label='Исходный сигнал')
     plt.plot(time, inversed, 'r', label='Восстановленный сигнал')
     plt.xlabel('t')
@@ -71,11 +75,13 @@ def plot(time, signal, inversed, output_dir, sigma):
 
 def main():
     time = np.linspace(0, 1, 100)
+    print('Original signal')
+    print('frequency, decay, amplitude, phase')
     signal = cos(A=1, freq=1, phase=2, decay=0.1, time=time) 
     signal += cos(A=0.25, freq=3, phase=2, decay=0.2, time=time)
     signal += cos(A=0.2, freq=7, phase=1, decay=0.2, time=time)
 
-    sigma = 1
+    sigma = 1.8
     noised = gaussian_filter(signal, sigma=sigma, radius=5)
 
     name = 'sample2'
