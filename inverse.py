@@ -49,7 +49,7 @@ def cos(A, freq, phase, decay, time):
 
 def run_inversion(input, output_dir):
     subprocess.run(['./harminv.sh', input, output_dir])
-    df = pd.read_csv('./data/inversed.csv', engine='python', sep=', ')
+    df = pd.read_csv(os.path.join(output_dir, 'inversion.csv'), engine='python', sep=', ')
     return df
 
 def build_signal(harmonics, time):
@@ -81,6 +81,9 @@ def load_signal(input):
 
 def main():
     args = parse_arguments()
+    dir = os.path.join(args.output_dir)
+    if not os.path.exists(dir):
+        os.mkdir(dir)
     
     signal = load_signal(args.input_path)
     time = np.linspace(0, 1, len(signal))
