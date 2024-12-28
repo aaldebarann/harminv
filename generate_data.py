@@ -1,23 +1,65 @@
+import sys
 import numpy as np
 import pandas as pd
+from scipy.ndimage import gaussian_filter
+import matplotlib.pyplot as plt
+import subprocess
+import os
 
-time = np.linspace(0, 1, 100)
+def save(signal, path):
+    # Convert the numpy array to a DataFrame
+    df = pd.DataFrame(signal)
 
-#signal = np.exp(-time)
+    # Print the DataFrame to a CSV file
+    df.to_csv(path, index=False, header=False)
 
-signal = np.exp((-1+2j)*time)
+    with open(path, 'r') as file:
+        data = file.read()
 
-# Convert the numpy array to a DataFrame
-df = pd.DataFrame(signal)
+    data = data.replace('j', 'i').replace('(', '').replace(')', '')
 
-# Print the DataFrame to a CSV file
-df.to_csv('./data/data.csv', index=False, header=False)
+    with open(path, 'w') as file:
+        file.write(data)
 
-with open('./data/data.csv', 'r') as file:
-    data = file.read()
+    print('Data saved to {0}'.format(path))
 
-data = data.replace('j', 'i').replace('(', '').replace(')', '')
+def exp(A, freq, phase, decay, time):
+    return A * np.exp( -1j * (2 * np.pi * freq * time - phase) - decay * time)
 
-with open('./data/data.csv', 'w') as file:
-    file.write(data)
+def cos(A, freq, phase, decay, time):
+    return A * np.exp(-decay * time) * np.cos(2 * np.pi * freq * time - phase)
 
+def sample_1(output_path):
+    time = np.linspace(0, 1, 100)
+    signal = exp(A=1, freq=1, phase=2, decay=0.1, time=time)
+    save(signal, path=output_path)
+
+def sample_2(output_path):
+    time = np.linspace(0, 1, 100)
+    signal = exp(A=1, freq=1, phase=2, decay=0.1, time=time) + exp(A=2, freq=0.5, phase=0, decay=0.1, time=time)
+    save(signal, path=output_path)
+
+def sample_3(output_path):
+    time = np.linspace(0, 1, 100)
+    signal = exp(A=1, freq=1, phase=2, decay=0.1, time=time) + exp(A=2, freq=0.5, phase=0, decay=0.1, time=time)
+    save(signal, path=output_path)
+
+def main():
+    time = np.linspace(0, 1, 100)
+    signal = cos(A=1, freq=1, phase=2, decay=0.1, time=time) 
+    signal += cos(A=0.25, freq=3, phase=2, decay=0.2, time=time)
+    signal += cos(A=0.2, freq=7, phase=1, decay=0.2, time=time)
+
+    sigma = 1
+
+    noised = gaussian_filter(signal, sigma=sigma, radius=5)
+
+    name = r'noised_{0}'.format(sigma)
+    dir = os.path.join('data', name)
+    if not os.path.exists(dir):
+        os.mkdir(dir)
+    save(noised, os.path.join(dir, 'data.csv'))
+
+
+if __name__ == '__main__':
+    sys.exit(main() or 0)
