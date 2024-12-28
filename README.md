@@ -3,7 +3,9 @@
 [harminv](https://github.com/NanoComp/harminv)
 ## Установка необходимых зависимостей
 ```
-pip install -r requirements.txt
+conda install anaconda::numpy
+conda install anaconda::pandas
+conda install conda-forge/label/gcc7::harminv
 ```
 ## Обзор файлов
 * `data` - директория, где хранятся данные экспериментов
