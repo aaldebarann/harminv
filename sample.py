@@ -5,6 +5,18 @@ from scipy.ndimage import gaussian_filter
 import matplotlib.pyplot as plt
 import subprocess
 import os
+import argparse
+
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dir",
+                        help="Directory to save output files",
+                        required=True,)
+    parser.add_argument("--sigma",
+                        help="sigma",
+                        required=True,
+                        type=float)
+    return parser.parse_args()
 
 def save(signal, path):
     # Convert the numpy array to a DataFrame
@@ -47,13 +59,10 @@ def sample_3(output_path):
     signal = exp(A=1, freq=1, phase=2, decay=0.1, time=time) + exp(A=2, freq=0.5, phase=0, decay=0.1, time=time)
     save(signal, path=output_path)
 
-def inversion(signal, dir):
-    save(signal, os.path.join('data', dir, 'data.csv'))
-    subprocess.run(['./harminv.sh', dir])
-
 def get_inversed(time, dir):
-    subprocess.run(['./harminv__.sh', dir])
-    df = pd.read_csv(os.path.join(dir, 'inversed.csv'), engine='python', sep=', ')
+    input_data = os.path.join(dir, 'data.csv')
+    subprocess.run(['./harminv.sh', input_data, dir])
+    df = pd.read_csv(os.path.join(dir, 'inversion.csv'), engine='python', sep=', ')
     
     signal = np.zeros(len(time), dtype='complex128')
     print('Inversed signal')
@@ -74,6 +83,10 @@ def plot(time, signal, inversed, output_dir, sigma):
     plt.show()
 
 def main():
+    args = parse_arguments()
+    sigma = args.sigma
+    dir = args.dir
+
     time = np.linspace(0, 1, 100)
     print('Original signal')
     print('frequency, decay, amplitude, phase')
@@ -81,11 +94,8 @@ def main():
     signal += cos(A=0.25, freq=3, phase=2, decay=0.2, time=time)
     signal += cos(A=0.2, freq=7, phase=1, decay=0.2, time=time)
 
-    sigma = 1.8
     noised = gaussian_filter(signal, sigma=sigma, radius=5)
 
-    name = 'sample2'
-    dir = os.path.join('data', name)
     if not os.path.exists(dir):
         os.mkdir(dir)
     save(noised, os.path.join(dir, 'data.csv'))
