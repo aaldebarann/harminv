@@ -44,6 +44,25 @@ def sample_3(output_path):
     signal = exp(A=1, freq=1, phase=2, decay=0.1, time=time) + exp(A=2, freq=0.5, phase=0, decay=0.1, time=time)
     save(signal, path=output_path)
 
+def inversion(signal, dir):
+    save(signal, os.path.join('data', dir, 'data.csv'))
+    subprocess.run(['./harminv.sh', dir])
+
+def get_inversed(time, dir):
+    subprocess.run(['./harminv__.sh', dir])
+    df = pd.read_csv(os.path.join(dir, 'inversed.csv'), sep=',\s+')
+    print(os.path.join(dir, 'inversed.csv'))
+    
+    signal = np.zeros(len(time), dtype='complex128')
+    print(len(time))
+    print(df.head())
+    print(df.columns)
+    for index, row in df.iterrows():
+        #print(row['frequency'])
+        signal += exp(A=row['amplitude'], freq=row['frequency'], phase=row['phase'], decay=row['decay constant'], time=time)
+    signal = signal.astype('float64')
+    return signal
+
 def main():
     time = np.linspace(0, 1, 100)
     signal = cos(A=1, freq=1, phase=2, decay=0.1, time=time) 

@@ -9,9 +9,16 @@ import argparse
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-in", "--input_path", help="Path to source .csv file", required=True)
-    parser.add_argument("-out", "--output_path", help="Output .csv file path", required=True)
-    parser.add_argument("-v", "--verbose", help="Output .csv file path", required=False)
+    parser.add_argument("-in", "--input_path",
+                        help="Path to source .csv file",
+                        required=True)
+    parser.add_argument("-out", "--output_dir",
+                        help="Directory to save output files",
+                        required=False,
+                        default='.')
+    parser.add_argument("-v", "--verbose",
+                        help="Output .csv file path",
+                        required=False)
     return parser.parse_args()
 
 def save(signal, path):
@@ -40,8 +47,8 @@ def cos(A, freq, phase, decay, time):
     print('{0}, {1}, {2}, {3}'.format(-freq, decay, A/2, phase))
     return A * np.exp(-decay * time) * np.cos(2 * np.pi * freq * time - phase)
 
-def run_inversion(input):
-    subprocess.run(['./harminv.sh', input])
+def run_inversion(input, output_dir):
+    subprocess.run(['./harminv.sh', input, output_dir])
     df = pd.read_csv('./data/inversed.csv', engine='python', sep=', ')
     return df
 
@@ -55,31 +62,29 @@ def build_signal(harmonics, time):
     return signal
 
 def plot(time, signal, inversed, output_dir):
-    plt.title(r'Восстановленный сигнал при зашумлении')
-
-    print(time.shape, signal.shape, inversed.shape)
-    plt.plot(time, signal, 'bo', label='Данные эксперимента')
-    plt.plot(time, inversed, 'r', label='Восстановленный сигнал')
-        
+    plt.title(r'Дискретный и восстановленный сигнал')
+    plt.scatter(time[0], signal[0], c='b', label='Данные эксперимента')
+    for i in range(len(signal)):
+        plt.scatter(time[i], signal[i], c='b')
+    plt.plot(time, inversed, 'r', label='Восстановленный сигнал')        
     plt.xlabel('t')
     plt.ylabel('x')
     plt.legend()
-    plt.savefig(os.path.join(output_dir, 'original_and_inverse_signal.png'))
+    plt.savefig('original_and_inverse_signal.png')
     plt.show()
 
 def load_signal(input):
-    df = pd.read_csv(input, engine='python', headers=None)
-    data = np.asarray(df)
-    print(df.head())
-    data = data[0]
+    df = pd.read_csv(input, engine='python', header=None)
+    data = np.asarray(df.values)
+    data = data[:,0]
     return data
 
 def main():
     args = parse_arguments()
     
     signal = load_signal(args.input_path)
-    time = np.linspace(0, len(signal), 1)
-    harmonics = run_inversion(args.input_path)    
+    time = np.linspace(0, 1, len(signal))
+    harmonics = run_inversion(args.input_path, args.output_dir)    
     inversed_signal = build_signal(harmonics, time)
 
     plot(time, signal, inversed_signal, dir)
